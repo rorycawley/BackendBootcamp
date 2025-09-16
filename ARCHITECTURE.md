@@ -1,13 +1,44 @@
 # Architecture Principles
 
 **Purpose**  
-A short, actionable set of principles that guide system design independent of technology choices. Use them to structure ADRs, design reviews, and runbooks.
+A short, actionable set of principles that guide system design independent of technology choices. Use them to structure ADRs, design reviews, and runbooks. Make better decisions faster. These principles explain **what to do** and **why**, with concrete fitness checks.
 
 **Scope**  
 Applies to product features, platforms, data pipelines, and internal tools. Exceptions require an ADR with rollback plans.
 
-**Precedence (when principles conflict)**  
-**Correctness → Security/Privacy → Reliability → Observability → Operability → Cost → Speed of change → Reuse.**
+## Precedence (when principles conflict)
+**Order:** Correctness → Security/Privacy → Reliability → Observability → Operability → Cost → Speed of change → Reuse
+
+**Why**  
+This order minimizes user harm and long‑term risk. Shipping fast but wrong or insecure creates permanent costs. We first protect truth and trust, then ensure the system stays up and diagnosable, then optimize for ease of operations and money, and only then chase speed and reuse.
+
+**What each means**
+- **Correctness**: Data integrity and invariant‑preserving behavior. Never ship known wrong results; prefer a slower right answer over a fast wrong one.  
+- **Security/Privacy**: Least privilege, safe handling of secrets and PII, compliance, and auditable access. If user data is at risk, stop and fix.  
+- **Reliability**: Meeting SLOs for availability and latency; graceful degradation and safe rollback paths.  
+- **Observability**: The ability to detect, trace, and diagnose issues quickly (metrics, logs, traces, IDs). If we can’t see it, we can’t keep SLOs.  
+- **Operability**: Ease of running the system—simple deploys, backpressure, quotas, runbooks, on‑call health.  
+- **Cost**: Total cost of ownership ($/req, $/user, infra + people time). Optimize without hurting the higher priorities.  
+- **Speed of change**: Lead time, batch size, flags/canaries, and reversibility that keep delivery fast and safe.  
+- **Reuse**: Shared libraries/frameworks after proven need (≥3 call sites). Useful, but last.
+
+**How to use this order**
+1) Identify the impacted dimensions and **user impact/SLO risk**. Anything affecting a higher item wins.  
+2) Prefer **reversible** options (flags/canaries) when trade‑offs are close.  
+3) Time‑box exceptions with an **ADR** (owner, exit criteria, review date).  
+4) Record the trade‑off in the ADR and link the **fitness metrics** you’ll watch.
+
+**Examples**
+- A fix increases infra cost by 15%: **Correctness > Cost** → ship fix now; open a cost‑reduction ticket.  
+- Proposing a shared DB to ship faster: **Security/Privacy + Boundaries > Speed** → expose an API; no cross‑service table reads.  
+- Dropping logs to save CPU: **Observability > Cost** → keep essential telemetry; optimize sampling/retention instead.  
+- Deadline pressures to ship without rollback: **Reliability/Operability > Speed** → slice scope and ship behind a flag.
+
+**Fitness**  
+ADRs that cite Precedence must list: impacted dimensions, user/SLO impact, the chosen trade‑off, and the rollback plan. 
+
+**Rule of thumb**  
+*Never ship fast‑wrong or fast‑insecure. Make it right, safe, and observable; then make it cheap and fast; reuse last.*
 
 **How to apply**  
 For any design/change: pick the **3–5 most relevant** principles, state how you’ll meet the **tenets**, and attach evidence to the **fitness** metrics. Capture decisions in an ADR.

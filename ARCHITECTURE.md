@@ -51,6 +51,11 @@ For any design/change: pick the **3–5 most relevant** principles, state how yo
 **Description**  
 Define availability, latency, and durability SLOs per capability. Tie rollouts, capacity, and incident response to these targets. Document RTO/RPO and test them.
 
+**Do**
+- Define SLOs per endpoint/flow (availability, p95/p99 latency, durability).  
+- Agree **RTO/RPO** and test via failure drills.  
+- Use **error budgets** to gate risky changes.
+
 **Tenets**
 - SLOs defined per endpoint/flow (**availability, p95/p99 latency, durability**).  
 - **RTO/RPO** agreed, tested via failure drills.  
@@ -67,6 +72,11 @@ Define availability, latency, and durability SLOs per capability. Tie rollouts, 
 **Description**  
 Prefer designs that are easy to modify tomorrow over abstractions that look elegant today. Duplication is cheaper than the wrong abstraction; let patterns emerge from real usage (3+ call sites) before you framework‑ize. In reviews, ask: *Will this choice make the next change safer/faster?* Ship behind feature flags to learn in prod and refactor from evidence.
 
+**Do**
+- Duplicate until there are **3+** call sites; then extract.  
+- Ship behind **feature flags**; keep branches short.  
+- In review ask: *Will this make the next change faster/safer?*  
+
 **Tenets**
 - Don’t build frameworks until **3+** call sites exist.  
 - Prefer **feature flags** to long‑lived branches; keep branches short and integrate behind flags.
@@ -82,6 +92,11 @@ Prefer designs that are easy to modify tomorrow over abstractions that look eleg
 **Description**  
 A complex system that works evolves from a simple one that works. Treat production as the primary learning environment: ship thin vertical slices, observe with telemetry, and keep changes reversible (flags, canaries, rollbacks). Favor parallel runs and shadow traffic over big‑bang cutovers.
 
+**Do**
+- Ship **thin vertical slices**; run new paths **in parallel** (shadow/dual‑run).  
+- **Canary** releases with **fast rollback** (<10 min).  
+- Prefer data/telemetry to big‑bang cutovers.  
+
 **Tenets**
 - Ship **thin vertical slices**; run new paths **in parallel** before cutover.  
 - Stage rollouts (canaries) with **easy rollback**; design for **graceful retreat**.
@@ -96,6 +111,11 @@ A complex system that works evolves from a simple one that works. Treat producti
 
 **Description**  
 Organize around cohesive domains with explicit APIs, not generic multi‑layer stacks. Stable contracts reduce coupling and make evolution safe; leaking internals or sharing databases creates hidden dependencies. Version APIs sparingly with deprecation plans. Count hops and N+1 calls in hot paths.
+
+**Do**
+- **No service** reads another service’s tables.  
+- Breaking changes require **versioned APIs + deprecation window**.  
+- Keep hot‑path hops **≤ 2**; avoid N+1 on hot endpoints.
 
 **Tenets**
 - **No service** reads another service’s tables.  
@@ -113,6 +133,11 @@ Organize around cohesive domains with explicit APIs, not generic multi‑layer s
 **Description**  
 Pick designs from measured workloads, SLOs, and cost—not trends. Before choosing a tool, write the workload model (RPS, payloads, p95/p99), spike with realistic data, and record results in an ADR with review dates and rollback criteria. Make performance budgets first‑class in CI.
 
+**Do**
+- Write the **workload model** (RPS, data shapes, p95/p99) before choosing tech.  
+- Spike with realistic data; record results, review date, and rollback criteria in an **ADR**.  
+- Add **CI perf gates** that fail merges on **>10%** regression (p95/CPU/bytes).  
+
 **Tenets**
 - Define workload model (**RPS, data shapes, p95/p99**) before choosing tech.  
 - Run realistic spikes; record in **ADRs** with review dates + rollback criteria.  
@@ -128,6 +153,11 @@ Pick designs from measured workloads, SLOs, and cost—not trends. Before choosi
 
 **Description**  
 Access patterns dictate structure, boundaries, and algorithms. Model ownership by read/write shapes and change cadence; push filters/joins/aggregations to where the bytes live. Avoid broad fetch + in‑app filtering; control payloads and serialization overhead.
+
+**Do**
+- Express rules as **predicates/joins/group‑bys**; avoid post‑fetch scans.  
+- Ensure every **hot query has a matching index/sort**; prune unused indexes.  
+- Return only needed fields; control serialization and payload size.  
 
 **Tenets**
 - Express rules as **predicates/joins/group‑bys**—no post‑query scans.  
@@ -145,6 +175,11 @@ Access patterns dictate structure, boundaries, and algorithms. Model ownership b
 **Description**  
 Throughput and latency collapse without explicit limits. Design bounded queues, timeouts, retries with budgets, and graceful shedding. Tune concurrency to cores/I/O; protect fairness with per‑tenant quotas and hot‑key detection. Measure queue **age** (not just length) and tail latency.
 
+**Do**
+- Use **bounded queues**, timeouts/retries with budgets, and graceful shedding.  
+- Tune concurrency to cores/I/O; enforce **per‑tenant quotas**; detect hot keys.  
+- Measure **queue age** and tail latency; alert on budgets.  
+
 **Tenets**
 - **Bounded queues**, timeouts/retries with budgets, **graceful shedding**.  
 - Concurrency tuned to cores/I/O; **per‑tenant quotas** and hot‑key detection.
@@ -159,6 +194,11 @@ Throughput and latency collapse without explicit limits. Design bounded queues, 
 
 **Description**  
 Speed that returns the wrong answer is a bug. Make transaction boundaries and invariants explicit; use idempotency and test crash/retry paths. Treat caches as additional copies of truth with defined invalidation strategies (dogpile protection, negative caching). Track read/write amplification so derived views don’t spiral. Split a fast‑path for the common case with a verified slow‑path for correctness.
+
+**Do**
+- State **transaction boundaries & invariants**; make commands **idempotent**; test crash/retry paths.  
+- Define **cache taxonomy & invalidation** (dogpile protection, negative caching).  
+- Track **read/write amplification**; keep a verified **slow‑path** beside the fast path.  
 
 **Tenets**
 - State **transaction boundaries & invariants**; idempotent commands; crash‑path tests.  
@@ -176,6 +216,11 @@ Speed that returns the wrong answer is a bug. Make transaction boundaries and in
 **Description**  
 If you can’t see it, you can’t operate it. Instrument every endpoint with traces, metrics, and structured logs carrying correlation IDs. Keep “golden traces” for hot flows and wire SLOs to alerting and error budgets. Dashboards and runbooks are acceptance criteria.
 
+**Do**
+- Emit **traces, metrics, structured logs** with **correlation IDs** for every endpoint.  
+- Maintain **golden traces** for hot paths; wire SLOs to alerts and error budgets.  
+- Include **dashboards & runbooks** in “done.”  
+
 **Tenets**
 - Every endpoint emits **traces, metrics, structured logs** with **correlation IDs**.  
 - **Golden traces** maintained per hot path; **error budgets** gate feature work.
@@ -190,6 +235,11 @@ If you can’t see it, you can’t operate it. Instrument every endpoint with tr
 
 **Description**  
 Enforce least‑privilege IAM, short‑lived creds, encryption in transit/at rest, and audited access paths. Keep PII in designated services with reviewed data contracts, minimization, and retention policies. Treat boundary changes as security events (threat model, review, tests). Automation (linting, CI checks, secrets scanning) makes the secure path the easy path.
+
+**Do**
+- Enforce **least privilege**, short‑lived creds, encryption **in transit/at rest**.  
+- Keep **PII** in designated services with contracts, minimization, and retention.  
+- Threat‑model boundary changes; automate linting and **secrets scanning** in CI.  
 
 **Tenets**
 - **Least‑privilege IAM**; no **long‑lived human creds**.  
@@ -207,6 +257,11 @@ Enforce least‑privilege IAM, short‑lived creds, encryption in transit/at res
 **Description**  
 Make $/req and $/user visible next to latency and error rates; attribute spend to services and features. Prefer managed services when they improve SLOs or reduce TCO; otherwise justify the build/operate cost. Reduce waste by batching, compressing payloads, and eliminating unnecessary hops.
 
+**Do**
+- Prefer **managed services** when they improve SLOs or reduce TCO.  
+- **Batch/async** where user latency isn’t visible; **compress** payloads; eliminate extra hops.  
+- Show **$/req** and **$/user** next to latency on dashboards.  
+
 **Tenets**
 - **Managed services** unless they blow SLOs or cost.  
 - **Batch/async** where user latency isn’t visible.  
@@ -222,6 +277,11 @@ Make $/req and $/user visible next to latency and error rates; attribute spend t
 
 **Description**  
 Architect for failure domains (AZ/region/service). Provide graceful degradation for partial outages. Back up state and practice restore. Document and test DR plans.
+
+**Do**
+- Use **multi‑AZ** for stateful systems; document region **failover**.  
+- Provide **degraded modes** for core journeys.  
+- Back up and **practice restore**; measure restore time.  
 
 **Tenets**
 - Multi‑AZ for stateful systems; region failover strategy documented.  
@@ -239,6 +299,11 @@ Architect for failure domains (AZ/region/service). Provide graceful degradation 
 **Description**  
 Adopt “you build it, you run it.” Prefer a curated stack (“paved road”) with templates, libraries, and docs. Deviations require an ADR and a support plan. Every service has an owner, on‑call rotation, and clear runbooks.
 
+**Do**
+- Default to **templates** (logging, metrics, CI gates) and a curated stack.  
+- Each service has an **owner, on‑call**, and **runbooks**.  
+- ADR required for deviations with a support plan.
+
 **Tenets**
 - Services use **templates** (logging, metrics, CI gates) by default.  
 - Each service has **owner + pager**; on‑call health reviewed.  
@@ -254,6 +319,11 @@ Adopt “you build it, you run it.” Prefer a curated stack (“paved road”) 
 
 **Description**  
 Version architecture diagrams (light C4), API contracts, SLOs, and runbooks with the code. Validate diagrams and OpenAPI/IDL in CI to prevent drift.
+
+**Do**
+- Version **C4‑lite diagrams** and data flows with code.  
+- Validate **contracts** (OpenAPI/IDL/schema) in CI; flag breaking changes.  
+- Treat **runbooks & dashboards** as part of “done.” 
 
 **Tenets**
 - **C4‑lite** diagrams + data flows checked into repo.  

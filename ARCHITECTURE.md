@@ -1,4 +1,4 @@
-# Architecture Principles – Tech‑Agnostic v1.0
+# Architecture Principles
 
 **Purpose**  
 A short, actionable set of principles that guide system design independent of technology choices. Use them to structure ADRs, design reviews, and runbooks.
